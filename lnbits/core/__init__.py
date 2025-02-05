@@ -39,4 +39,6 @@ def init_core_routers(app: FastAPI):
     app.include_router(tinyurl_router)
     app.include_router(webpush_router)
     app.include_router(users_router)
-    app.include_router(fundingsource_router)
+
+
+__all__ = ["core_app", "core_app_extra", "db"]

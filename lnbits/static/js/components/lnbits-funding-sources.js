@@ -1,6 +1,14 @@
 Vue.component('lnbits-funding-sources', {
   mixins: [windowMixin],
   props: ['form-data', 'allowed-funding-sources'],
+  methods: {
+    getFundingSourceLabel(item) {
+      const fundingSource = this.rawFundingSources.find(
+        fundingSource => fundingSource[0] === item
+      )
+      return fundingSource ? fundingSource[1] : item
+    }
+  },
   computed: {
     fundingSources() {
       let tmp = []
@@ -14,6 +22,9 @@ Vue.component('lnbits-funding-sources', {
         tmp.push([key, tmpObj])
       }
       return new Map(tmp)
+    },
+    sortedAllowedFundingSources() {
+      return this.allowedFundingSources.sort()
     }
   },
   data() {
@@ -93,10 +104,19 @@ Vue.component('lnbits-funding-sources', {
         ],
         [
           'LNbitsWallet',
-          'LNBits',
+          'LNbits',
           {
             lnbits_endpoint: 'Endpoint',
             lnbits_key: 'Admin Key'
+          }
+        ],
+        [
+          'BlinkWallet',
+          'Blink',
+          {
+            blink_api_endpoint: 'Endpoint',
+            blink_ws_endpoint: 'WebSocket',
+            blink_token: 'Key'
           }
         ],
         [
@@ -105,6 +125,16 @@ Vue.component('lnbits-funding-sources', {
           {
             alby_api_endpoint: 'Endpoint',
             alby_access_token: 'Key'
+          }
+        ],
+        [
+          'BoltzWallet',
+          'Boltz',
+          {
+            boltz_client_endpoint: 'Endpoint',
+            boltz_client_macaroon: 'Admin Macaroon path or hex',
+            boltz_client_cert: 'Certificate path or hex',
+            boltz_client_wallet: 'Wallet Name'
           }
         ],
         [
@@ -145,6 +175,24 @@ Vue.component('lnbits-funding-sources', {
             spark_url: 'Endpoint',
             spark_token: 'Token'
           }
+        ],
+        [
+          'NWCWallet',
+          'Nostr Wallet Connect',
+          {
+            nwc_pairing_url: 'Pairing URL'
+          }
+        ],
+        [
+          'BreezSdkWallet',
+          'Breez SDK',
+          {
+            breez_api_key: 'Breez API Key',
+            breez_greenlight_seed: 'Greenlight Seed',
+            breez_greenlight_device_key: 'Greenlight Device Key',
+            breez_greenlight_device_cert: 'Greenlight Device Cert',
+            breez_greenlight_invite_code: 'Greenlight Invite Code'
+          }
         ]
       ]
     }
@@ -159,7 +207,8 @@ Vue.component('lnbits-funding-sources', {
               filled
               v-model="formData.lnbits_backend_wallet_class"
               hint="Select the active funding wallet"
-              :options="allowedFundingSources"
+              :options="sortedAllowedFundingSources"
+              :option-label="(item) => getFundingSourceLabel(item)"
             ></q-select>
           </div>
         </div>

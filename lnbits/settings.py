@@ -47,6 +47,7 @@ class UsersSettings(LNbitsSettings):
 
 class ExtensionsSettings(LNbitsSettings):
     lnbits_admin_extensions: list[str] = Field(default=[])
+    lnbits_user_default_extensions: list[str] = Field(default=[])
     lnbits_extensions_deactivate_all: bool = Field(default=False)
     lnbits_extensions_manifests: list[str] = Field(
         default=[
@@ -217,6 +218,12 @@ class LnPayFundingSource(LNbitsSettings):
     lnpay_admin_key: Optional[str] = Field(default=None)
 
 
+class BlinkFundingSource(LNbitsSettings):
+    blink_api_endpoint: Optional[str] = Field(default="https://api.blink.sv/graphql")
+    blink_ws_endpoint: Optional[str] = Field(default="wss://ws.blink.sv/graphql")
+    blink_token: Optional[str] = Field(default=None)
+
+
 class ZBDFundingSource(LNbitsSettings):
     zbd_api_endpoint: Optional[str] = Field(default="https://api.zebedee.io/v0/")
     zbd_api_key: Optional[str] = Field(default=None)
@@ -251,6 +258,25 @@ class LnTipsFundingSource(LNbitsSettings):
     lntips_invoice_key: Optional[str] = Field(default=None)
 
 
+class NWCFundingSource(LNbitsSettings):
+    nwc_pairing_url: Optional[str] = Field(default=None)
+
+
+class BreezSdkFundingSource(LNbitsSettings):
+    breez_api_key: Optional[str] = Field(default=None)
+    breez_greenlight_seed: Optional[str] = Field(default=None)
+    breez_greenlight_invite_code: Optional[str] = Field(default=None)
+    breez_greenlight_device_key: Optional[str] = Field(default=None)
+    breez_greenlight_device_cert: Optional[str] = Field(default=None)
+
+
+class BoltzFundingSource(LNbitsSettings):
+    boltz_client_endpoint: Optional[str] = Field(default="127.0.0.1:9002")
+    boltz_client_macaroon: Optional[str] = Field(default=None)
+    boltz_client_wallet: Optional[str] = Field(default="lnbits")
+    boltz_client_cert: Optional[str] = Field(default=None)
+
+
 class LightningSettings(LNbitsSettings):
     lightning_invoice_expiry: int = Field(default=3600)
 
@@ -265,12 +291,16 @@ class FundingSourcesSettings(
     LndRestFundingSource,
     LndGrpcFundingSource,
     LnPayFundingSource,
+    BlinkFundingSource,
     AlbyFundingSource,
+    BoltzFundingSource,
     ZBDFundingSource,
     PhoenixdFundingSource,
     OpenNodeFundingSource,
     SparkFundingSource,
     LnTipsFundingSource,
+    NWCFundingSource,
+    BreezSdkFundingSource,
 ):
     lnbits_backend_wallet_class: str = Field(default="VoidWallet")
 
@@ -414,19 +444,23 @@ class SuperUserSettings(LNbitsSettings):
     lnbits_allowed_funding_sources: list[str] = Field(
         default=[
             "AlbyWallet",
-            "FakeWallet",
+            "BoltzWallet",
+            "BlinkWallet",
+            "BreezSdkWallet",
             "CoreLightningRestWallet",
             "CoreLightningWallet",
             "EclairWallet",
-            "LNbitsWallet",
-            "LndRestWallet",
+            "FakeWallet",
             "LNPayWallet",
+            "LNbitsWallet",
             "LnTipsWallet",
+            "LndRestWallet",
             "LndWallet",
             "OpenNodeWallet",
             "PhoenixdWallet",
             "VoidWallet",
             "ZBDWallet",
+            "NWCWallet",
         ]
     )
 

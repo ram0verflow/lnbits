@@ -56,7 +56,9 @@ new Vue({
       update: {
         name: null,
         currency: null
-      }
+      },
+      inkeyHidden: true,
+      adminkeyHidden: true
     }
   },
   computed: {
@@ -209,6 +211,54 @@ new Vue({
         })
       }
     },
+    lnurlScan() {
+      LNbits.api
+        .request(
+          'GET',
+          '/api/v1/lnurlscan/' + this.parse.data.request,
+          this.g.wallet.adminkey
+        )
+        .catch(err => {
+          LNbits.utils.notifyApiError(err)
+        })
+        .then(response => {
+          let data = response.data
+
+          if (data.status === 'ERROR') {
+            this.$q.notify({
+              timeout: 5000,
+              type: 'warning',
+              message: `${data.domain} lnurl call failed.`,
+              caption: data.reason
+            })
+            return
+          }
+
+          if (data.kind === 'pay') {
+            this.parse.lnurlpay = Object.freeze(data)
+            this.parse.data.amount = data.minSendable / 1000
+          } else if (data.kind === 'auth') {
+            this.parse.lnurlauth = Object.freeze(data)
+          } else if (data.kind === 'withdraw') {
+            this.parse.show = false
+            this.receive.show = true
+            this.receive.status = 'pending'
+            this.receive.paymentReq = null
+            this.receive.paymentHash = null
+            this.receive.data.amount = data.maxWithdrawable / 1000
+            this.receive.data.memo = data.defaultDescription
+            this.receive.minMax = [
+              data.minWithdrawable / 1000,
+              data.maxWithdrawable / 1000
+            ]
+            this.receive.lnurl = {
+              domain: data.domain,
+              callback: data.callback,
+              fixed: data.fixed
+            }
+          }
+        })
+    },
     decodeQR: function (res) {
       this.parse.data.request = res
       this.decodeRequest()
@@ -216,67 +266,18 @@ new Vue({
     },
     decodeRequest: function () {
       this.parse.show = true
-      let req = this.parse.data.request.toLowerCase()
-      if (this.parse.data.request.toLowerCase().startsWith('lightning:')) {
-        this.parse.data.request = this.parse.data.request.slice(10)
-      } else if (this.parse.data.request.toLowerCase().startsWith('lnurl:')) {
-        this.parse.data.request = this.parse.data.request.slice(6)
-      } else if (req.indexOf('lightning=lnurl1') !== -1) {
-        this.parse.data.request = this.parse.data.request
-          .split('lightning=')[1]
-          .split('&')[0]
+      this.parse.data.request = this.parse.data.request.trim().toLowerCase()
+      let req = this.parse.data.request
+      if (req.startsWith('lightning:')) {
+        this.parse.data.request = req.slice(10)
+      } else if (req.startsWith('lnurl:')) {
+        this.parse.data.request = req.slice(6)
+      } else if (req.includes('lightning=lnurl1')) {
+        this.parse.data.request = req.split('lightning=')[1].split('&')[0]
       }
-
-      if (
-        this.parse.data.request.toLowerCase().startsWith('lnurl1') ||
-        this.parse.data.request.match(/[\w.+-~_]+@[\w.+-~_]/)
-      ) {
-        LNbits.api
-          .request(
-            'GET',
-            '/api/v1/lnurlscan/' + this.parse.data.request,
-            this.g.wallet.adminkey
-          )
-          .catch(err => {
-            LNbits.utils.notifyApiError(err)
-          })
-          .then(response => {
-            let data = response.data
-
-            if (data.status === 'ERROR') {
-              this.$q.notify({
-                timeout: 5000,
-                type: 'warning',
-                message: `${data.domain} lnurl call failed.`,
-                caption: data.reason
-              })
-              return
-            }
-
-            if (data.kind === 'pay') {
-              this.parse.lnurlpay = Object.freeze(data)
-              this.parse.data.amount = data.minSendable / 1000
-            } else if (data.kind === 'auth') {
-              this.parse.lnurlauth = Object.freeze(data)
-            } else if (data.kind === 'withdraw') {
-              this.parse.show = false
-              this.receive.show = true
-              this.receive.status = 'pending'
-              this.receive.paymentReq = null
-              this.receive.paymentHash = null
-              this.receive.data.amount = data.maxWithdrawable / 1000
-              this.receive.data.memo = data.defaultDescription
-              this.receive.minMax = [
-                data.minWithdrawable / 1000,
-                data.maxWithdrawable / 1000
-              ]
-              this.receive.lnurl = {
-                domain: data.domain,
-                callback: data.callback,
-                fixed: data.fixed
-              }
-            }
-          })
+      req = this.parse.data.request
+      if (req.startsWith('lnurl1') || req.match(/[\w.+-~_]+@[\w.+-~_]/)) {
+        this.lnurlScan()
         return
       }
 
@@ -542,7 +543,7 @@ new Vue({
     pasteToTextArea: function () {
       this.$refs.textArea.focus() // Set cursor to textarea
       navigator.clipboard.readText().then(text => {
-        this.$refs.textArea.value = text
+        this.parse.data.request = text.trim()
       })
     }
   },

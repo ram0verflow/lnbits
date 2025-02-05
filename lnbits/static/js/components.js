@@ -610,7 +610,8 @@ Vue.component('lnbits-dynamic-fields', {
   props: ['options', 'value'],
   data() {
     return {
-      formData: null
+      formData: null,
+      rules: [val => !!val || 'Field is required']
     }
   },
 
@@ -619,49 +620,109 @@ Vue.component('lnbits-dynamic-fields', {
       <div class="row q-mb-lg" v-for="o in options">
         <div class="col auto-width">
           <p v-if=o.options?.length class="q-ml-xl">
-            <span v-text="o.name"></span> <small v-if="o.description"> (<span v-text="o.description"></span>)</small>
+            <span v-text="o.label || o.name"></span> <small v-if="o.description"> (<span v-text="o.description"></span>)</small>
           </p>
           <lnbits-dynamic-fields v-if="o.options?.length" :options="o.options" v-model="formData[o.name]"
             @input="handleValueChanged" class="q-ml-xl">
           </lnbits-dynamic-fields>
           <div v-else>
-            <q-input v-if="o.type === 'number'" v-model="formData[o.name]" @input="handleValueChanged" type="number"
-              :label="o.name" :hint="o.description" filled dense>
-            </q-input>
-            <q-input v-else-if="o.type === 'text'" v-model="formData[o.name]" @input="handleValueChanged" type="textarea"
-              rows="5" :label="o.name" :hint="o.description" filled dense>
-            </q-input>
-            <q-input v-else-if="o.type === 'password'" v-model="formData[o.name]" @input="handleValueChanged" type="password"
-                :label="o.name" :hint="o.description" filled dense>
-            </q-input>
+            <q-input
+              v-if="o.type === 'number'"
+              type="number"
+              v-model="formData[o.name]"
+              @input="handleValueChanged"
+              :label="o.label || o.name"
+              :hint="o.description"
+              :rules="applyRules(o.required)"
+              filled
+              dense
+            ></q-input>
+            <q-input
+              v-else-if="o.type === 'text'"
+              type="textarea"
+              rows="5"
+              v-model="formData[o.name]"
+              @input="handleValueChanged"
+              :label="o.label || o.name"
+              :hint="o.description"
+              :rules="applyRules(o.required)"
+              filled
+              dense
+            ></q-input>
+            <q-input
+              v-else-if="o.type === 'password'"
+              v-model="formData[o.name]"
+              @input="handleValueChanged"
+              type="password"
+              :label="o.label || o.name"
+              :hint="o.description"
+              :rules="applyRules(o.required)"
+              filled
+              dense
+            ></q-input>
+            <q-select
+              v-else-if="o.type === 'select'"
+              v-model="formData[o.name]"
+              @input="handleValueChanged"
+              :label="o.label || o.name"
+              :hint="o.description"
+              :options="o.values"
+              :rules="applyRules(o.required)"
+            ></q-select>
+            <q-select
+              v-else-if="o.isList"
+              v-model.trim="formData[o.name]"
+              @input="handleValueChanged"
+              input-debounce="0"
+              new-value-mode="add-unique"
+              :label="o.label || o.name"
+              :hint="o.description"
+              :rules="applyRules(o.required)"
+              filled
+              multiple
+              dense
+              use-input
+              use-chips
+              multiple
+              hide-dropdown-icon
+            ></q-select>
             <div v-else-if="o.type === 'bool'">
               <q-item tag="label" v-ripple>
                 <q-item-section avatar top>
                   <q-checkbox v-model="formData[o.name]" @input="handleValueChanged" />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label><span v-text="o.name"></span></q-item-label>
+                  <q-item-label><span v-text="o.label || o.name"></span></q-item-label>
                   <q-item-label caption> <span v-text="o.description"></span> </q-item-label>
                 </q-item-section>
               </q-item>
             </div>
-            <q-select v-else-if="o.type === 'select'" v-model="formData[o.name]" @input="handleValueChanged" :label="o.name"
-              :hint="o.description" :options="o.values"></q-select>
-
-            <q-select v-else-if="o.isList" filled multiple dense v-model.trim="formData[o.name]" use-input use-chips
-              @input="handleValueChanged" multiple hide-dropdown-icon input-debounce="0" new-value-mode="add-unique"
-              :label="o.name" :hint="o.description">
-            </q-select>
-            <q-input v-else v-model="formData[o.name]" @input="handleValueChanged" :label="o.name" :hint="o.description"
-              filled dense>
-            </q-input>
-
+            <q-input
+              v-else-if="o.type === 'hidden'"
+              v-model="formData[o.name]"
+              type="text"
+              style="display: none"
+              :rules="applyRules(o.required)"
+            ></q-input>
+            <q-input
+              v-else
+              v-model="formData[o.name]"
+              @input="handleValueChanged"
+              :hint="o.description"
+              :label="o.label || o.name"
+              :rules="applyRules(o.required)"
+              filled
+              dense
+            ></q-input>
           </div>
         </div>
       </div>
     </div>
   `,
   methods: {
+    applyRules(required) {
+      return required ? this.rules : []
+    },
     buildData(options, data = {}) {
       return options.reduce((d, option) => {
         if (option.options?.length) {
